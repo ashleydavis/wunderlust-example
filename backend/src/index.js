@@ -74,15 +74,35 @@ app.post(`/chat/list`, async (req, res) => {
     const messages = await openai.beta.threads.messages.list(threadId);
 
     let status = undefined;
+    let run = undefined
     if (runId) {
-        const run = await openai.beta.threads.runs.retrieve(threadId, runId);
+        run = await openai.beta.threads.runs.retrieve(threadId, runId);
         status = run.status;
     }   
 
     res.json({
         messages: messages.data,
+        run,
         status,
     });
+});
+
+//
+// Submits function outputs for a particular thread.
+//
+app.post(`/chat/submit`, async (req, res) => {
+        
+    const { threadId, runId, outputs } = req.body;
+
+    await openai.beta.threads.runs.submitToolOutputs(
+        threadId,
+        runId,
+        {
+            tool_outputs: outputs,
+        }
+    );
+
+    res.sendStatus(200);
 });
 
 app.listen(port, () => {

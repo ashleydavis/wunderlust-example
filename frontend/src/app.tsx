@@ -1,8 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ThreadMessage } from "openai/resources/beta/threads/messages/messages";
+import { Run } from "openai/resources/beta/threads/runs/runs";
 import Markdown from 'markdown-to-jsx';
-import { Cv } from "./cv";
 import axios from "axios";
+import L from 'leaflet';
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import 'leaflet/dist/leaflet.css';
+
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
 
 const BASE_URL = process.env.BASE_URL;
 if (!BASE_URL) {
@@ -18,12 +31,18 @@ export function App() {
     const [message, setMessage] = useState<string>("");
     const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
     const [showInfo, setShowInfo] = useState<boolean>(true);
+    const [mapCenter, setMapCenter] = useState<{ latitude: number, longitude: number }>({ 
+        latitude: 51.505, 
+        longitude: -0.09,
+    });
+    const [mapZoom, setMapZoom] = useState<number>(13);
+    const [mapMarker, setMapMarker] = useState<{ latitude: number, longitude: number, label: string } | undefined>(undefined);
 
     //
     // Creates a new message thread, if there isn't one already.
     //
     async function createThread(): Promise<void> {
-        
+
         if (threadId.current === undefined) {
             //
             // Try and reload from local storage.
@@ -34,7 +53,6 @@ export function App() {
                 await updateMessages();
             }
         }
-
 
         if (threadId.current !== undefined) {
             // Already have a thread.
@@ -50,7 +68,7 @@ export function App() {
         //
         // Save the thread id in local storage.
         //
-        localStorage.setItem("threadId", threadId.current);
+        localStorage.setItem("threadId", threadId.current!);
     }
 
     //
@@ -83,6 +101,59 @@ export function App() {
     }
 
     //
+    // Updates the map to center on a particular location.
+    //
+    function updateMap({ longitude, latitude, zoom }: { longitude: number, latitude: number, zoom: number }): string {
+        setMapCenter({ latitude, longitude });
+        setMapZoom(zoom);
+        return "Map updated";
+    }
+
+    //
+    // Adds a marker to the map at a particular location.
+    //
+    function addMarker({ latitude, longitude, label }: { latitude: number, longitude: number, label: string }): string {
+        setMapMarker({ latitude, longitude, label });
+        return "Marker added";
+    }
+
+    //
+    // Functions available to the chatbot.
+    //
+    const chatbotFunctions: any = {
+        updateMap,
+        addMarker,
+    };
+
+    //
+    // Invoke functions called by the chatbot.
+    //
+    async function invokeChatbotFunctions(run: Run): Promise<void> {
+        if (run.required_action?.type === "submit_tool_outputs") {
+
+            const outputs = [];
+
+            for (const toolCall of run.required_action.submit_tool_outputs.tool_calls) {
+                if (toolCall.type === "function") {
+                    const toolArgs = JSON.parse(toolCall.function.arguments);
+                    const functionName = toolCall.function.name;
+                    const functionOutput = chatbotFunctions[functionName](toolArgs);
+                    outputs.push({
+                        tool_call_id: toolCall.id,
+                        output: functionOutput,
+                    });
+                }
+            }
+
+            await axios.post(`${BASE_URL}/chat/submit`, {
+                threadId: threadId.current,
+                runId,
+                outputs,
+            });
+        }        
+    }
+
+    //
     // Updates messages in the UI.
     //
     async function updateMessages(): Promise<void> {
@@ -92,10 +163,14 @@ export function App() {
             runId: runId,
         });
 
-        const { messages, status } = data;
-        
+        const { messages, status, run } = data;
+       
         messages.reverse(); // Reverse so the newest messages are at the bottom.
         setMessages(messages);
+
+        if (status === "requires_action") {
+            await invokeChatbotFunctions(run);
+        }
 
         if (runId) {
             if (status === "completed") {
@@ -158,7 +233,7 @@ export function App() {
 
         const timer = setInterval(() => {
             updateMessages();
-        }, 1000);
+        }, 10000);
 
         return () => {
             clearInterval(timer);
@@ -191,8 +266,52 @@ export function App() {
         }
     };
 
+    //
+    // Helper component to update the position and zoom of the map.
+    //
+    function ChangeMapView({ position, zoom }: { position: [number, number], zoom: number }) {
+        const map = useMap();
+        map.setView(position, zoom);
+        return undefined; // Don't actually render anything.
+    }    
+
     return (
         <div>
+            <div
+                style={{
+                    width: "100vw",
+                    height: "100vh",
+                }}
+                >
+                <MapContainer 
+                    center={[ mapCenter.latitude, mapCenter.longitude ]} 
+                    zoom={mapZoom} 
+                    scrollWheelZoom={false}
+                    style={{
+                        width: "100%",
+                        height: "100%",
+                    }}
+                    >
+                    <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+
+                    <ChangeMapView 
+                        position={[ mapCenter.latitude, mapCenter.longitude ]} 
+                        zoom={mapZoom}
+                        />
+
+                    {mapMarker &&
+                        <Marker position={[ mapMarker.latitude, mapMarker.longitude ]}>
+                            <Popup>
+                                {mapMarker.label}
+                            </Popup>
+                        </Marker>
+                    }
+                </MapContainer>
+            </div>
+
             {showInfo && <div
                 style={{
                     boxShadow: "0 0 #0000, 0 0 #0000, 0 1px 2px 0 rgb(0 0 0 / 0.05)",
@@ -202,25 +321,25 @@ export function App() {
                 }}
                 className="flex flex-col fixed top-[50px] right-0 mr-4 bg-gray-50 p-6 rounded-lg border border-[#e5e7eb] w-[440px]"
                 >
-                <p className="text-lg">Hello! This is the resume of Ashley Davis.</p>
-                <p className="pt-2">The CV on the left was exported from Google Docs.</p>
+                <p className="text-lg">Hello! This is my version of the Wunderlust chatbot example from Open AI.</p>
+                <p className="pt-2">The map is powerded by Leaflet.</p>
                 <p>The chatbot below is implemented using TypeScript, React and the Open AI API, through a Node.js backend. </p>
 
                 <a 
                     className="mt-3 text-sm text-blue-600 font-medium underline"
-                    href="https://github.com/ashleydavis/chatbot-example" 
+                    href="https://github.com/ashleydavis/wunderlust-example" 
                     target="_blank"
                     >
                     See the code on GitHub
                 </a>
 
-                <a 
+                {/*todo: <a 
                     className="mt-1 text-sm text-blue-600 font-medium underline"
                     href="https://www.youtube.com/watch?v=RY_B1bmSvs0" 
                     target="_blank"
                     >
                     Learn how to make this chatbot
-                </a>
+                </a> */}
 
                 <div 
                     className="absolute top-[10px] right-[10px] cursor-pointer"
@@ -249,14 +368,15 @@ export function App() {
                     boxShadow: "0 0 #0000, 0 0 #0000, 0 1px 2px 0 rgb(0 0 0 / 0.05)",
                     maxHeight: "80%",
                     maxWidth: "80%",
+                    zIndex: 900,
                 }}
                 className="flex flex-col fixed bottom-[calc(4rem+1.5rem)] right-0 mr-4 bg-gray-50 p-6 pt-2 rounded-lg border border-[#e5e7eb] w-[440px] h-[600px]"
                 >
 
                 {/* <!-- Heading --> */}
                 <div className="flex flex-col space-y-1.5 pb-6">
-                    <h2 className="font-semibold text-lg tracking-tight">Ask questions about Ashley Davis</h2>
-                    <p className="text-xs text-[#6b7280] leading-3">Powered by Open AI (ChatGPT) and the CV of Ashley Davis</p>
+                    <h2 className="font-semibold text-lg tracking-tight">Ask questions about the world</h2>
+                    <p className="text-xs text-[#6b7280] leading-3">Powered by Open AI (ChatGPT) and Leaflet</p>
                     <p className="text-xs text-[#6b7280] leading-3">Answers are probabalistic and can be wrong. ChatGPT isn't intelligent.</p>
                 </div>
 
@@ -279,7 +399,7 @@ export function App() {
                             </div>
                         </span>
                         <p className="leading-relaxed">
-                            <span className="block font-bold text-gray-700">AI </span> Ask question about the skills, education and work history of Ashley Davis
+                            <span className="block font-bold text-gray-700">AI </span> Ask questions about the world
                         </p>
                     </div>
 
@@ -343,7 +463,7 @@ export function App() {
                         <div className="flex items-center justify-center w-full space-x-2">
                             <input
                                 className="flex h-10 w-full rounded-md border border-[#e5e7eb] px-3 py-2 text-sm placeholder-[#6b7280] focus:outline-none focus:ring-2 focus:ring-[#9ca3af] disabled:cursor-not-allowed disabled:opacity-50 text-[#030712] focus-visible:ring-offset-2"
-                                placeholder="Ask a question about Ashley Davis" 
+                                placeholder="Where do you want to go?" 
                                 value={message}
                                 onChange={e => setMessage(e.target.value)}
                                 disabled={runId !== undefined}
@@ -362,7 +482,7 @@ export function App() {
                     </div>
 
                     <div className="text-sm ml-3 pt-3 pr-1 text-gray-500">
-                        Example: What is Ashley's skillset?
+                        Example: Show me Paris
                     </div>
                 </div>
             </div>}
@@ -380,7 +500,6 @@ export function App() {
                 </svg>
             </button>
 
-            <Cv />
         </div>
     );
 }

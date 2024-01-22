@@ -1,0 +1,26 @@
+{
+    "name": "addMarker",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "longitude": {
+                "type": "number",
+                "description": "Longitude of the location to the marker"
+            },
+            "latitude": {
+                "type": "number",
+                "description": "Latitude of the location to the marker"
+            },
+            "label": {
+                "type": "string",
+                "description": "Text to display on the marker"
+            }
+        },
+        "required": [
+            "longitude",
+            "latitude",
+            "label"
+        ]
+    },
+    "description": "Adds a marker to the map at a particular location"
+}

@@ -1,28 +1,27 @@
-# Chatbot example
+# Wunderlust example
 
-An example of building a Chatbot with the Open AI API.
+This is my version of the Open AI "Wunderlust" chatbot.
 
 If you like this project, please star this repo and [support my work](https://www.codecapers.com.au/about#support-my-work)
-
-## Live demo
-
-Find a live demo of the chatbot here:
-https://cv.codecapers.com.au/
-
-## Video overview
-
-I've made a video to show how to make a chatbot like this:
-https://www.youtube.com/watch?v=RY_B1bmSvs0
 
 ## Original UI code
 
 https://tailwindcomponents.com/component/ai-chatbot
+
+## Thanks
+
+I give thanks to the Python example from Widgetti:
+https://github.com/widgetti/wanderlust
+
+I started this Wunderlust example by reading Widgett's Python code and making my own version in TypeScript.
 
 ## Pre-reqs
 
 Sign up for Open AI and take note of the API key.
 
 Create an assistant in the Open AI Playground and take note of the assistant ID.
+
+Enable "Functions" for your assistant. Then add each JSON file under `./frontend/functions` to your assistant.
 
 ## Setup
 
