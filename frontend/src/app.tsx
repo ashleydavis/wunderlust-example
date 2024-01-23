@@ -326,8 +326,8 @@ export function App() {
                 }}
                 className="flex flex-col fixed top-[50px] right-0 mr-4 bg-gray-50 p-6 rounded-lg border border-[#e5e7eb] w-[440px]"
                 >
-                <p className="text-lg">Hello! This is my version of the Wunderlust chatbot example from Open AI.</p>
-                <p className="pt-2">The map is powerded by Leaflet.</p>
+                <p className="text-lg">Hello! This <a href="https://cv.codecapers.com.au/" target="_blank">Ashley's</a> version of the Wunderlust chatbot example from Open AI.</p>
+                <p className="pt-2">The map is powered by Leaflet.</p>
                 <p>The chatbot below is implemented using TypeScript, React and the Open AI API, through a Node.js backend. </p>
 
                 <a 
@@ -338,13 +338,13 @@ export function App() {
                     See the code on GitHub
                 </a>
 
-                {/*todo: <a 
+                {<a 
                     className="mt-1 text-sm text-blue-600 font-medium underline"
                     href="https://www.youtube.com/watch?v=RY_B1bmSvs0" 
                     target="_blank"
                     >
-                    Learn how to make this chatbot
-                </a> */}
+                    Learn the basics of making a chatbot
+                </a>}
 
                 <div 
                     className="absolute top-[10px] right-[10px] cursor-pointer"
