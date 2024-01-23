@@ -10,6 +10,11 @@ See a live demo here:
 
 https://wunderlust.codecapers.com.au/
 
+## Learn
+
+Learn how to make the basic version of this chatbot:
+https://www.youtube.com/watch?v=RY_B1bmSvs0
+
 ## Original UI code
 
 https://tailwindcomponents.com/component/ai-chatbot
