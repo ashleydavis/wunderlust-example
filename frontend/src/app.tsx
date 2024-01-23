@@ -333,13 +333,21 @@ export function App() {
                     See the code on GitHub
                 </a>
 
-                {<a 
+                <a 
                     className="mt-1 text-sm text-blue-600 font-medium underline"
                     href="https://www.youtube.com/watch?v=RY_B1bmSvs0" 
                     target="_blank"
                     >
                     Learn the basics of making a chatbot
-                </a>}
+                </a>
+
+                <a 
+                    className="mt-1 text-sm text-blue-600 font-medium underline"
+                    href="https://www.youtube.com/@codecapers" 
+                    target="_blank"
+                    >
+                    A new video about this example is coming soon
+                </a>
 
                 <div 
                     className="absolute top-[10px] right-[10px] cursor-pointer"
