@@ -4,6 +4,12 @@ This is my version of the Open AI "Wunderlust" chatbot.
 
 If you like this project, please star this repo and [support my work](https://www.codecapers.com.au/about#support-my-work)
 
+## Live demo
+
+See a live demo here:
+
+https://wunderlust.codecapers.com.au/
+
 ## Original UI code
 
 https://tailwindcomponents.com/component/ai-chatbot
