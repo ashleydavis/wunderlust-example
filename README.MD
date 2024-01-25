@@ -12,8 +12,9 @@ https://wunderlust.codecapers.com.au/
 
 ## Learn
 
-Learn how to make the basic version of this chatbot:
-https://www.youtube.com/watch?v=RY_B1bmSvs0
+Learn how to make thischatbot:
+
+https://www.youtube.com/watch?v=Rxju_XVAnDE
 
 ## Original UI code
 
