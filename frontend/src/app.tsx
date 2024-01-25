@@ -251,7 +251,7 @@ export function App() {
 
         const timer = setInterval(() => {
             updateMessages();
-        }, 10000);
+        }, 1000);
 
         return () => {
             clearInterval(timer);
