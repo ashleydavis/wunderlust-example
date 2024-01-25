@@ -12,7 +12,7 @@ https://wunderlust.codecapers.com.au/
 
 ## Learn
 
-Learn how to make thischatbot:
+Learn how to make this chatbot:
 
 https://www.youtube.com/watch?v=Rxju_XVAnDE
 

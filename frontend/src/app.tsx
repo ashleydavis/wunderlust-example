@@ -353,18 +353,10 @@ export function App() {
 
                 <a 
                     className="mt-1 text-sm text-blue-600 font-medium underline"
-                    href="https://www.youtube.com/watch?v=RY_B1bmSvs0" 
+                    href="https://www.youtube.com/watch?v=Rxju_XVAnDE" 
                     target="_blank"
                     >
-                    Learn the basics of making a chatbot
-                </a>
-
-                <a 
-                    className="mt-1 text-sm text-blue-600 font-medium underline"
-                    href="https://www.youtube.com/@codecapers" 
-                    target="_blank"
-                    >
-                    A new video about this example is coming soon
+                    Learn how to make this chatbot
                 </a>
 
                 <div 
