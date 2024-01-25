@@ -77,6 +77,24 @@ export function App() {
     }
 
     //
+    // Starts a new chat thread.
+    //
+    function onResetThread() {
+        threadId.current = undefined;
+        setMessages([]);
+        setMessage("");
+        setRunId(undefined);
+        scrollContainer.current!.scrollTop = 0;
+        localStorage.removeItem("threadId");
+
+        createThread()
+            .catch(err => {
+                console.error(`Failed to create message thread.`);
+                console.error(err);
+            });
+    }
+
+    //
     // Adds a message to the chat.
     //
     async function sendMessage(text: string): Promise<void> {
@@ -208,7 +226,7 @@ export function App() {
     function renderText(text: string, role: string) {
         return text.split("\n").map((line, index) => {
             return (
-                <p key={index} className="leading-relaxed">
+                <div key={index} className="leading-relaxed">
                     {index === 0 
                         && <span 
                             className="block font-bold text-gray-700"
@@ -217,7 +235,7 @@ export function App() {
                         </span>
                     }
                     <Markdown>{line}</Markdown>
-                </p>
+                </div>
             );
         });
     }
@@ -238,7 +256,7 @@ export function App() {
 
         const timer = setInterval(() => {
             updateMessages();
-        }, 10000);
+        }, 1000);
 
         return () => {
             clearInterval(timer);
@@ -340,18 +358,10 @@ export function App() {
 
                 <a 
                     className="mt-1 text-sm text-blue-600 font-medium underline"
-                    href="https://www.youtube.com/watch?v=RY_B1bmSvs0" 
+                    href="https://www.youtube.com/watch?v=Rxju_XVAnDE" 
                     target="_blank"
                     >
-                    Learn the basics of making a chatbot
-                </a>
-
-                <a 
-                    className="mt-1 text-sm text-blue-600 font-medium underline"
-                    href="https://www.youtube.com/@codecapers" 
-                    target="_blank"
-                    >
-                    A new video about this example is coming soon
+                    Learn how to make this chatbot
                 </a>
 
                 <div 
@@ -497,6 +507,15 @@ export function App() {
                     <div className="text-sm ml-3 pt-3 pr-1 text-gray-500">
                         Example: Show me Paris
                     </div>
+                </div>
+
+                <div 
+                    className="absolute top-[10px] right-[10px] cursor-pointer"
+                    onClick={onResetThread}
+                    >
+                    <svg width="24" height="24" viewBox="0 0 24 24">
+                        <path d="M 10 2 L 9 3 L 4 3 L 4 5 L 5 5 L 5 20 C 5 20.522222 5.1913289 21.05461 5.5683594 21.431641 C 5.9453899 21.808671 6.4777778 22 7 22 L 17 22 C 17.522222 22 18.05461 21.808671 18.431641 21.431641 C 18.808671 21.05461 19 20.522222 19 20 L 19 5 L 20 5 L 20 3 L 15 3 L 14 2 L 10 2 z M 7 5 L 17 5 L 17 20 L 7 20 L 7 5 z M 9 7 L 9 18 L 11 18 L 11 7 L 9 7 z M 13 7 L 13 18 L 15 18 L 15 7 L 13 7 z"></path>
+                    </svg>
                 </div>
             </div>}
 
