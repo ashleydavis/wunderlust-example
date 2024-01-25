@@ -221,7 +221,7 @@ export function App() {
     function renderText(text: string, role: string) {
         return text.split("\n").map((line, index) => {
             return (
-                <p key={index} className="leading-relaxed">
+                <div key={index} className="leading-relaxed">
                     {index === 0 
                         && <span 
                             className="block font-bold text-gray-700"
@@ -230,7 +230,7 @@ export function App() {
                         </span>
                     }
                     <Markdown>{line}</Markdown>
-                </p>
+                </div>
             );
         });
     }
