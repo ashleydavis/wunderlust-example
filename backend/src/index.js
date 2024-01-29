@@ -138,6 +138,7 @@ app.post(`/chat/audio`, noMiddleware, async (req, res) => {
         file,
     })
 
+    // Send the message to the chat thread.
     const run = await sendMessage(threadId, response.text);
     
     res.json({

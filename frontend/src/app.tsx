@@ -323,6 +323,7 @@ export function App() {
                     // Combine and process audioChunks as needed.
                     const audioBlob = new Blob(audioChunks, { type: audioChunks[0].type });
 
+                    // Submit the audio to the backend for processing.
                     axios.post(`${BASE_URL}/chat/audio?threadId=${threadId.current}`, audioBlob)
                         .then(response => {
                             setRunId(response.data.runId);
