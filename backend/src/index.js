@@ -41,23 +41,20 @@ app.post(`/chat/new`, async (req, res) => {
 });
 
 //
-// Sends a new chat message.
+// Adds a chat message to a thread, sending it to Open AI.
 //
-app.post(`/chat/send`, async (req, res) => {
-
-    const { threadId, text } = req.body;
-
+async function sendMessage(threadId, text) {
     await openai.beta.threads.messages.create(
         threadId,
         {
-          role: "user",
-          content: text,
+            role: "user",
+            content: text,
         }
     );
 
     const run = await openai.beta.threads.runs.create(
         threadId,
-        { 
+        {
             assistant_id: ASSISTANT_ID,
         }
     );
@@ -69,6 +66,17 @@ app.post(`/chat/send`, async (req, res) => {
         text,
         ip: req.clientIp,
     });
+    return run;
+}
+
+//
+// Sends a new chat message.
+//
+app.post(`/chat/send`, async (req, res) => {
+
+    const { threadId, text } = req.body;
+
+    const run = await sendMessage(threadId, text);
     
     res.json({
         runId: run.id,
@@ -138,6 +146,39 @@ app.post(`/chat/submit`, async (req, res) => {
     });
 
     res.sendStatus(200);
+});
+
+
+//
+// Stops the middleware for a route.
+//
+function noMiddleware(req, res, next) {
+    next();
+};
+
+//
+// Submits an audio message to a chat thread.
+//
+app.post(`/chat/audio`, noMiddleware, async (req, res) => {
+
+    const { threadId } = req.query;
+    
+    // Convert audio to a Open AI "file" object.
+    const file = await OpenAI.toFile(req, "audio.webm");
+
+    // Transcribe the audio file.
+    const response = await openai.audio.transcriptions.create({
+        model: "whisper-1",
+        response_format: "json",
+        file,
+    })
+
+    // Send the message to the chat thread.
+    const run = await sendMessage(threadId, response.text);
+    
+    res.json({
+        runId: run.id,
+    });
 });
 
 app.listen(port, () => {
