@@ -37,6 +37,9 @@ export function App() {
     });
     const [mapZoom, setMapZoom] = useState<number>(13);
     const [mapMarker, setMapMarker] = useState<{ latitude: number, longitude: number, label: string } | undefined>(undefined);
+    const [recording, setRecording] = useState<boolean>(false);
+    const mediaRecorderRef = useRef<MediaRecorder | undefined>(undefined);
+    const audioChunksRef = useRef<Blob[] | undefined>(undefined);
 
     //
     // Creates a new message thread, if there isn't one already.
@@ -113,9 +116,15 @@ export function App() {
     // Sends the message the user has typed to the AI.
     //
     async function onSendMessage(): Promise<void> {
-        const messageToSend = message.trim();
-        setMessage(""); // Clear for the next message.
-        await sendMessage(messageToSend);
+        if (recording) {
+            // Stop recording and submit audio.
+            setRecording(false);
+        }
+        else {
+            const messageToSend = message.trim();
+            setMessage(""); // Clear for the next message.
+            await sendMessage(messageToSend);
+        }
     }
 
     //
@@ -292,6 +301,76 @@ export function App() {
         map.setView(position, zoom);
         return undefined; // Don't actually render anything.
     }    
+
+    useEffect(() => {
+
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+
+                // You now have access to the user's microphone through the `stream` object.
+
+                const mediaRecorder = new MediaRecorder(stream);
+                const audioChunks: Blob[] = [];
+
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+
+                    // Combine and process audioChunks as needed.
+                    const audioBlob = new Blob(audioChunks, { type: audioChunks[0].type });
+
+                    axios.post(`${BASE_URL}/chat/audio?threadId=${threadId.current}`, audioBlob)
+                        .then(response => {
+                            setRunId(response.data.runId);
+                        })
+                        .catch(err => {
+                            console.error(`Failed to send audio.`);
+                            console.error(err);
+                        });
+                };
+
+                mediaRecorderRef.current = mediaRecorder;
+                audioChunksRef.current = audioChunks;
+            })
+            .catch(error => {
+                // Handle any errors that occur when trying to access the microphone.
+                console.error(`Failed to get it`);
+                console.error(error);
+            });
+
+    }, []);
+
+    useEffect(() => {
+
+        const mediaRecorder = mediaRecorderRef.current;
+        if (!mediaRecorder) {
+            return;
+        }
+
+        if (recording) {
+            // Reset audio chunks.
+            audioChunksRef.current = [];
+
+            // Start recording
+            mediaRecorder.start();
+        }
+        else {            
+            // Stop recording.
+            mediaRecorder.stop();
+        }
+
+    }, [recording]);
+
+    //
+    // Starts or stops recording depending on the current state.
+    //
+    function onToggleRecording() {
+        setRecording(previousValue => !previousValue);
+    }
 
     return (
         <div>
@@ -478,15 +557,37 @@ export function App() {
                 {/* <!-- Input box  --> */}
                 <div className="flex flex-col">
                     <div className="flex items-center pt-0">
-                        <div className="flex items-center justify-center w-full space-x-2">
-                            <input
-                                className="flex h-10 w-full rounded-md border border-[#e5e7eb] px-3 py-2 text-sm placeholder-[#6b7280] focus:outline-none focus:ring-2 focus:ring-[#9ca3af] disabled:cursor-not-allowed disabled:opacity-50 text-[#030712] focus-visible:ring-offset-2"
-                                placeholder="Where do you want to go?" 
-                                value={message}
-                                onChange={e => setMessage(e.target.value)}
-                                disabled={runId !== undefined}
-                                onKeyDown={onKeyDown}
-                                />
+                        <div className="flex flex-row items-center justify-center w-full space-x-3">
+                            <button
+                                onClick={onToggleRecording}
+                                style={{
+                                    stroke: recording ? "red" : "black",
+                                    fill: recording ? "red" : "black",
+                                }}
+                                >
+                                <svg className={recording ? "pulse-icon" : ""} width="24" height="24" viewBox="0 0 100 100">
+                                    <path d="m76.5 37.102c-1.8008 0-3.3008 1.3984-3.3008 3.1992v8.3008c0 12.602-10.301 23.102-23.102 23.102-12.801 0-23.301-10.5-23.301-23.102v-8.3008c0-1.8008-1.5-3.1992-3.3008-3.1992-1.8008 0-3.1992 1.3984-3.1992 3.1992v8.3008c0.003906 15.199 11.703 27.699 26.504 29.398v0.10156 10.398h-12.902c-1.8008 0-3.1992 1.5-3.1992 3.3008s1.3984 3.1992 3.1992 3.1992h32.102c1.8008 0 3.1992-1.3984 3.1992-3.1992s-1.3984-3.3008-3.1992-3.3008h-12.801v-10.301-0.10156c14.801-1.7969 26.5-14.297 26.5-29.496v-8.3008c0-1.6992-1.5-3.1992-3.1992-3.1992zm-26.5 28.797c9.8008 0 17.602-8 17.602-17.699l0.10156-25.5c-0.003906-9.6992-7.8047-17.699-17.602-17.699-9.8008 0-17.801 8-17.801 17.801v25.5c-0.10156 9.6992 7.8984 17.598 17.699 17.598z"/>
+                                </svg>
+                            </button>
+
+                            {!recording && 
+                                <input
+                                    className="flex h-10 w-full rounded-md border border-[#e5e7eb] px-3 py-2 text-sm placeholder-[#6b7280] focus:outline-none focus:ring-2 focus:ring-[#9ca3af] disabled:cursor-not-allowed disabled:opacity-50 text-[#030712] focus-visible:ring-offset-2"
+                                    placeholder="Where do you want to go?" 
+                                    value={message}
+                                    onChange={e => setMessage(e.target.value)}
+                                    disabled={runId !== undefined}
+                                    onKeyDown={onKeyDown}
+                                    />
+                            }
+
+                            {recording && 
+                                <span
+                                    className="flex items-center h-10 w-full px-3 py-2 text-sm text-[#6b7280]"                                    
+                                    >
+                                    Speak your message, then click&nbsp;<strong>Send</strong>.
+                                </span>
+                            }
 
                             <button
                                 className="inline-flex items-center justify-center rounded-md text-sm font-medium text-[#f9fafb] disabled:pointer-events-none disabled:opacity-50 bg-black hover:bg-[#111827E6] h-10 px-4 py-2"
