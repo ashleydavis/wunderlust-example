@@ -304,73 +304,76 @@ export function App() {
 
     useEffect(() => {
 
-        if (mediaRecorderRef.current) {
-            // 
-            // Already initalized.
+        if (recording && !mediaRecorderRef.current) {
             //
+            // Initialize media recorder the first time we need it.
+            //
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+
+                    // You now have access to the user's microphone through the `stream` object.
+
+                    const mediaRecorder = new MediaRecorder(stream);
+                    let audioChunks: Blob[] = [];
+
+                    mediaRecorder.ondataavailable = event => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+
+                    mediaRecorder.onstart = () => {
+                        // Clear audio chunks.
+                        audioChunks = [];
+                    };
+
+                    mediaRecorder.onstop = () => {
+
+                        // Combine and process audioChunks as needed.
+                        const audioBlob = new Blob(audioChunks, { type: audioChunks[0].type });
+
+                        // Submit the audio to the backend for processing.
+                        axios.post(`${BASE_URL}/chat/audio?threadId=${threadId.current}`, audioBlob)
+                            .then(response => {
+                                setRunId(response.data.runId);
+                            })
+                            .catch(err => {
+                                console.error(`Failed to send audio.`);
+                                console.error(err);
+                            });
+                    };
+
+                    mediaRecorderRef.current = mediaRecorder;
+                    audioChunksRef.current = audioChunks;
+
+                    // Start recording
+                    mediaRecorder.start();
+                })
+                .catch(error => {
+                    // Handle any errors that occur when trying to access the microphone.
+                    console.error(`Failed to get it`);
+                    console.error(error);
+                });
+        }
+        else {
+            //
+            // Reusing already created media recorder.
+            //
+            const mediaRecorder = mediaRecorderRef.current;
+            if (!mediaRecorder) {
+                return;
+            }
+            
+            if (recording) {
+                // Start recording
+                mediaRecorder.start();
+            }
+            else {            
+                // Stop recording.
+                mediaRecorder.stop();
+            }
         }
 
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => {
-
-                // You now have access to the user's microphone through the `stream` object.
-
-                const mediaRecorder = new MediaRecorder(stream);
-                let audioChunks: Blob[] = [];
-
-                mediaRecorder.ondataavailable = event => {
-                    if (event.data.size > 0) {
-                        audioChunks.push(event.data);
-                    }
-                };
-
-                mediaRecorder.onstart = () => {
-                    // Clear audio chunks.
-                    audioChunks = [];
-                };
-
-                mediaRecorder.onstop = () => {
-
-                    // Combine and process audioChunks as needed.
-                    const audioBlob = new Blob(audioChunks, { type: audioChunks[0].type });
-
-                    // Submit the audio to the backend for processing.
-                    axios.post(`${BASE_URL}/chat/audio?threadId=${threadId.current}`, audioBlob)
-                        .then(response => {
-                            setRunId(response.data.runId);
-                        })
-                        .catch(err => {
-                            console.error(`Failed to send audio.`);
-                            console.error(err);
-                        });
-                };
-
-                mediaRecorderRef.current = mediaRecorder;
-                audioChunksRef.current = audioChunks;
-            })
-            .catch(error => {
-                // Handle any errors that occur when trying to access the microphone.
-                console.error(`Failed to get it`);
-                console.error(error);
-            });
-
-    }, []);
-
-    useEffect(() => {
-
-        const mediaRecorder = mediaRecorderRef.current;
-        if (!mediaRecorder) {
-            return;
-        }
-
-        if (recording) {
-            // Start recording
-            mediaRecorder.start();
-        }
-        else {            
-            // Stop recording.
-            mediaRecorder.stop();
-        }
 
     }, [recording]);
 
