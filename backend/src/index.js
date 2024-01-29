@@ -43,7 +43,7 @@ app.post(`/chat/new`, async (req, res) => {
 //
 // Adds a chat message to a thread, sending it to Open AI.
 //
-async function sendMessage(threadId, text) {
+async function sendMessage(threadId, text, clientIp) {
     await openai.beta.threads.messages.create(
         threadId,
         {
@@ -64,7 +64,7 @@ async function sendMessage(threadId, text) {
         threadId,
         runId: run.id,
         text,
-        ip: req.clientIp,
+        ip: clientIp,
     });
     return run;
 }
@@ -76,7 +76,7 @@ app.post(`/chat/send`, async (req, res) => {
 
     const { threadId, text } = req.body;
 
-    const run = await sendMessage(threadId, text);
+    const run = await sendMessage(threadId, text, req.clientIp);
     
     res.json({
         runId: run.id,
@@ -174,7 +174,7 @@ app.post(`/chat/audio`, noMiddleware, async (req, res) => {
     })
 
     // Send the message to the chat thread.
-    const run = await sendMessage(threadId, response.text);
+    const run = await sendMessage(threadId, response.text, req.clientIp);
     
     res.json({
         runId: run.id,
