@@ -309,18 +309,29 @@ export function App() {
 
     useEffect(() => {
 
+        if (mediaRecorderRef.current) {
+            // 
+            // Already initalized.
+            //
+        }
+
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(stream => {
 
                 // You now have access to the user's microphone through the `stream` object.
 
                 const mediaRecorder = new MediaRecorder(stream);
-                const audioChunks: Blob[] = [];
+                let audioChunks: Blob[] = [];
 
                 mediaRecorder.ondataavailable = event => {
                     if (event.data.size > 0) {
                         audioChunks.push(event.data);
                     }
+                };
+
+                mediaRecorder.onstart = () => {
+                    // Clear audio chunks.
+                    audioChunks = [];
                 };
 
                 mediaRecorder.onstop = () => {
@@ -358,9 +369,6 @@ export function App() {
         }
 
         if (recording) {
-            // Reset audio chunks.
-            audioChunksRef.current = [];
-
             // Start recording
             mediaRecorder.start();
         }
