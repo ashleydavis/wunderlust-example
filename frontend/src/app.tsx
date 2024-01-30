@@ -316,17 +316,26 @@ export function App() {
                     const mediaRecorder = new MediaRecorder(stream);
                     let audioChunks: Blob[] = [];
 
+                    //
+                    // Event when audio data is available.
+                    //
                     mediaRecorder.ondataavailable = event => {
                         if (event.data.size > 0) {
                             audioChunks.push(event.data);
                         }
                     };
 
+                    //
+                    // Event when recording starts.
+                    //
                     mediaRecorder.onstart = () => {
                         // Clear audio chunks.
                         audioChunks = [];
                     };
 
+                    //
+                    // Event when recording stops.
+                    //
                     mediaRecorder.onstop = () => {
 
                         // Combine and process audioChunks as needed.
