@@ -22,6 +22,15 @@ if (!BASE_URL) {
     throw new Error("Missing BASE_URL environment variable.");
 }
 
+//
+// Represents a marker on the map.
+//
+interface IMarker {
+    latitude: number;
+    longitude: number
+    label: string;
+}
+
 export function App() {
 
     const threadId = useRef<string | undefined>(undefined);
@@ -36,7 +45,7 @@ export function App() {
         longitude: -0.09,
     });
     const [mapZoom, setMapZoom] = useState<number>(13);
-    const [mapMarker, setMapMarker] = useState<{ latitude: number, longitude: number, label: string } | undefined>(undefined);
+    const [mapMarkers, setMapMarkers] = useState<IMarker[]>([]);
     const [recording, setRecording] = useState<boolean>(false);
     const mediaRecorderRef = useRef<MediaRecorder | undefined>(undefined);
     const audioChunksRef = useRef<Blob[] | undefined>(undefined);
@@ -140,8 +149,21 @@ export function App() {
     // Adds a marker to the map at a particular location.
     //
     function addMarker({ latitude, longitude, label }: { latitude: number, longitude: number, label: string }): string {
-        setMapMarker({ latitude, longitude, label });
+        setMapMarkers(previousMarkers => {
+            return [
+                ...previousMarkers,
+                { latitude, longitude, label },
+            ];
+        });
         return "Marker added";
+    }
+
+    //
+    // Removes all markers from the map.
+    //
+    function removeMarkers(): string {
+        setMapMarkers([]);
+        return "Markers removed";
     }
 
     //
@@ -150,6 +172,7 @@ export function App() {
     const chatbotFunctions: any = {
         updateMap,
         addMarker,
+        removeMarkers,
     };
 
     //
@@ -420,13 +443,18 @@ export function App() {
                         zoom={mapZoom}
                         />
 
-                    {mapMarker &&
-                        <Marker position={[ mapMarker.latitude, mapMarker.longitude ]}>
-                            <Popup>
-                                {mapMarker.label}
-                            </Popup>
-                        </Marker>
-                    }
+                    {mapMarkers.map((mapMarker, index) => {
+                        return (
+                            <Marker 
+                                key={`${index}-${mapMarker.label}`}
+                                position={[ mapMarker.latitude, mapMarker.longitude ]}
+                                >
+                                <Popup>
+                                    {mapMarker.label}
+                                </Popup>
+                            </Marker>
+                        );
+                    })}
                 </MapContainer>
             </div>
 
