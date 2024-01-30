@@ -204,7 +204,7 @@ export function App() {
                 setTimeout(() => {
                     // The run has finished.
                     setRunId(undefined);
-                }, 5000); // Give it some time to finish up.
+                }, 1000); // Give it some time to finish up.
             }
         }
     }
